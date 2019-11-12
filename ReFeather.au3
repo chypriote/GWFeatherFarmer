@@ -34,6 +34,8 @@ Global Const $ITEM_ID_LOCKPICKS = 22751
 #Region Declarations
 Opt("GUIOnEventMode", True)
 Global $feathers = 0
+Global $bones = 0
+Global $dusts = 0
 Global $crests = 0
 Global $deaths = 0
 Global $BOT_RUNNING = False
@@ -48,29 +50,30 @@ Global $MAX_HP
 Global $gwpid = -1
 
 #Region Gui
-GUICreate("Feather Farm", 618, 290, 100, 100)
-$StartButton = GUICtrlCreateButton("Start", 8, 224, 233, 57)
-$cbxHideGW = GUICtrlCreateCheckbox("Disable Graphics", 264, 80, 177, 17)
-GUICtrlSetOnEvent($cbxHideGW, "GUI_EventHandler")
+GUICreate("Feather Farm", 210, 290, 100, 100)
 
-GUICtrlCreateGroup("Information", 8, 8, 233, 209)
-GUICtrlCreateLabel("Total runs:", 24, 40, 54, 17)
-$LabelRun = GUICtrlCreateLabel("0", 136, 40, 95, 17, $SS_CENTER)
-GUICtrlCreateLabel("Number of Deaths", 24, 64, 90, 17)
-$LabelDeaths = GUICtrlCreateLabel("0", 136, 64, 95, 17, $SS_CENTER)
-GUICtrlCreateLabel("Total gold earned:", 24, 88, 90, 17)
-$LabelGolds = GUICtrlCreateLabel("0", 136, 88, 95, 17, $SS_CENTER)
-GUICtrlCreateLabel("Feathers:", 24, 112, 66, 17)
-$LabelFeathers = GUICtrlCreateLabel("0", 136, 112, 95, 17, $SS_CENTER)
-GUICtrlCreateLabel("Feathered Crests:", 24, 136, 105, 17)
-$LabelCrests = GUICtrlCreateLabel("0", 136, 136, 95, 17, $SS_CENTER)
-GUICtrlCreateLabel("Status:", 24, 168, 37, 17)
-$LabelStatus = GUICtrlCreateLabel("Ready to begin", 24, 184, 204, 17, $SS_CENTER)
+GUICtrlCreateGroup("Character name:", 5, 5, 200, 45)
+$CharacterName = GUICtrlCreateCombo("", 10, 20, 120, 20, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
+	GUICtrlSetData(-1, GetLoggedCharNames())
+$cbxHideGW = GUICtrlCreateCheckbox("Render", 145, 20, 50, 20)
+	GUICtrlSetOnEvent($cbxHideGW, "GUI_EventHandler")
 
-GUICtrlCreateGroup("", -99, -99, 1, 1)
-GUICtrlCreateLabel("Character name:", 256, 27, 82, 17)
-$CharacterName = GUICtrlCreateCombo("", 344, 24, 121, 21, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
-   GUICtrlSetData(-1, GetLoggedCharNames())
+GUICtrlCreateGroup("Information", 5, 50, 200, 150)
+GUICtrlCreateLabel("Total runs:", 10, 70, 54, 15)
+	$LabelRun = GUICtrlCreateLabel("0", 150, 70, 50, 15, $SS_RIGHT)
+GUICtrlCreateLabel("Number of Deaths", 10, 90, 90, 15)
+	$LabelDeaths = GUICtrlCreateLabel("0000", 150, 90, 50, 15, $SS_RIGHT)
+GUICtrlCreateLabel("Total gold earned:", 10, 110, 90, 15)
+	$LabelGolds = GUICtrlCreateLabel("0", 150, 110, 50, 15, $SS_RIGHT)
+GUICtrlCreateLabel("Feathers:", 10, 130, 66, 15)
+	$LabelFeathers = GUICtrlCreateLabel("0", 150, 130, 50, 15, $SS_RIGHT)
+GUICtrlCreateLabel("Feathered Crests:", 10, 150, 105, 15)
+	$LabelCrests = GUICtrlCreateLabel("0", 150, 150, 50, 15, $SS_RIGHT)
+
+GUICtrlCreateGroup("Status:", 5, 200, 200, 40)
+	$LabelStatus = GUICtrlCreateLabel("Ready to begin", 10, 215, 180, 20, $SS_CENTER)
+
+$StartButton = GUICtrlCreateButton("Start", 15, 250, 170, 25)
 
 Opt("GUIOnEventMode", 1)
 GUISetOnEvent($GUI_EVENT_CLOSE, "_exit")
