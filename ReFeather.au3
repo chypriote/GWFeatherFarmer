@@ -35,7 +35,6 @@ Global Const $ITEM_ID_LOCKPICKS = 22751
 Opt("GUIOnEventMode", True)
 Global $feathers = 0
 Global $bones = 0
-Global $dusts = 0
 Global $crests = 0
 Global $deaths = 0
 Global $BOT_RUNNING = False
@@ -69,6 +68,8 @@ GUICtrlCreateLabel("Feathers:", 10, 130, 66, 15)
 	$LabelFeathers = GUICtrlCreateLabel("0", 150, 130, 50, 15, $SS_RIGHT)
 GUICtrlCreateLabel("Feathered Crests:", 10, 150, 105, 15)
 	$LabelCrests = GUICtrlCreateLabel("0", 150, 150, 50, 15, $SS_RIGHT)
+GUICtrlCreateLabel("Bones:", 10, 170, 105, 15)
+	$LabelBones = GUICtrlCreateLabel("0", 150, 170, 50, 15, $SS_RIGHT)
 
 GUICtrlCreateGroup("Status:", 5, 200, 200, 40)
 	$LabelStatus = GUICtrlCreateLabel("Ready to begin", 10, 215, 180, 20, $SS_CENTER)
@@ -448,24 +449,20 @@ Func CanPickUp($item)
 	Local $rarity = GetRarity($item)
 
 	If $ModelID == $ITEM_DYES And ($ExtraID == $ITEM_BLACK_DYE Or $ExtraID == $ITEM_WHITE_DYE) Then Return True	;Black and White Dye ; for only B/W
-	If $rarity == $RARITY_GOLD Then
-		$TOTAL_GOLDS += 1
-		GUICtrlSetData($COUNT_GOLDS, $TOTAL_GOLDS)
-		Return True
-	EndIf
+	If $rarity == $RARITY_GOLD Then Return True
 	If $ModelID == $ITEM_ID_BONES Then
 		$bones += DllStructGetData($item, 'Quantity')
-		GUICtrlSetData($COUNT_BONES, $bones)
+		GUICtrlSetData($LabelBones, $bones)
 		Return True ;changed to false because too many bones
-	EndIf
-	If $ModelID == $ITEM_ID_DUST Then
-		$dusts += DllStructGetData($item, 'Quantity')
-		GUICtrlSetData($COUNT_DUSTS, $dusts)
-		Return True
 	EndIf
 	If $ModelID == $ITEM_ID_FEATHER Then
 		$feathers += DllStructGetData($item, 'Quantity')
-		GUICtrlSetData($COUNT_FEATHERS, $feathers)
+		GUICtrlSetData($LabelFeathers, $feathers)
+		Return True
+	EndIf
+	If $ModelID == $ITEM_ID_FEATHERED_CREST Then
+		$crests += 1
+		GUICtrlSetData($LabelCrests, $crests)
 		Return True
 	EndIf
 	If $ModelID == $ITEM_ID_DIESSA Then Return True
