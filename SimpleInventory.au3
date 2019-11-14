@@ -158,10 +158,10 @@ EndFunc ;StoreInEmptySlot
 Func Identify()
 	Local $item, $bag
 	
-	RetrieveIdentificationKit()
 	For $i = 1 To $BAGS_TO_USE
 		$bag = GetBag($i)
 		
+		If Not RetrieveIdentificationKit(False) Then Return
 		For $j = 1 To DllStructGetData($bag, "slots")
 			$item = GetItemBySlot($i, $j)
 			If DllStructGetData($item, "Id") == 0 Then ContinueLoop
@@ -169,7 +169,7 @@ Func Identify()
 		Next
 	Next
 EndFunc ;Identify
-Func RetrieveIdentificationKit()
+Func RetrieveIdentificationKit($expert = True)
 	If FindIdentificationKit() = 0 Then
 		If GetGoldCharacter() < 500 And GetGoldStorage() > 499 Then
 			WithdrawGold(500)
@@ -177,11 +177,11 @@ Func RetrieveIdentificationKit()
 		EndIf
 		Local $J = 0
 		Do
-			BuySuperiorIdentificationKit()
+			$expert ? BuySuperiorIdentificationKit() : BuyIdentificationKit()
 			RndSleep(500)
 			$J = $J + 1
 		Until FindIdentificationKit() <> 0 Or $J = 3
-		If $J = 3 Then Exit
+		If $J = 3 Then Return False
 		RndSleep(500)
 	EndIf
  EndFunc ;RetrieveIdentificationKit
@@ -211,6 +211,7 @@ Func CanSalvage($item)
 	Local $rarity = GetRarity($item)
 	Local $requirement = GetItemReq($item)
 
+	If DllStructGetData($item, 'Quantity') > 0 Then Return False
 	If $rarity == $RARITY_GOLD			Then Return False
 	If $rarity == $RARITY_BLUE			Then Return False
 	If $rarity == $RARITY_PURPLE		Then Return False

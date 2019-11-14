@@ -1,6 +1,7 @@
 #include <Array.au3>
 
 Func CreateFarmingRoute()
+	Out("Calculating waypoints")
 	local $temproute1[1], $temproute2[1]
 	_ArrayAdd($temproute1,12020)
     _ArrayAdd($temproute2,-6218)

@@ -19,7 +19,10 @@ Global $SEITUNG_HARBOR = 250 ; Seitungs Harbor
 Global $JAYA_BLUFF = 196 ; Jaya Bluff
 
 ; === Build ===
-Global Const $SkillBarTemplate = "OACjAqiK5OQzH318bWOPbNTnJA"
+Global Const $SkillBarTemplate = "OACjAqiK5OPur53sce2gmNTnJA"
+
+Global $SkillEnergy[8] = [5, 15, 0, 5, 5, 15, 5, 10]
+Global $SkillCastTime[8] = [750, 1000, 750, 750, 1000, 1000, 2000, 2000]
 
 ; === Materials and usefull Items ===
 Global Const $ITEM_ID_FEATHER = 933
@@ -61,7 +64,7 @@ GUICtrlCreateGroup("Information", 5, 50, 200, 150)
 GUICtrlCreateLabel("Total runs:", 10, 70, 54, 15)
 	$LabelRun = GUICtrlCreateLabel("0", 150, 70, 50, 15, $SS_RIGHT)
 GUICtrlCreateLabel("Number of Deaths", 10, 90, 90, 15)
-	$LabelDeaths = GUICtrlCreateLabel("0000", 150, 90, 50, 15, $SS_RIGHT)
+	$LabelDeaths = GUICtrlCreateLabel("0", 150, 90, 50, 15, $SS_RIGHT)
 GUICtrlCreateLabel("Total gold earned:", 10, 110, 90, 15)
 	$LabelGolds = GUICtrlCreateLabel("0", 150, 110, 50, 15, $SS_RIGHT)
 GUICtrlCreateLabel("Feathers:", 10, 130, 66, 15)
@@ -141,9 +144,10 @@ Func Setup()
 EndFunc ;Setup
 
 Func SetupResign()
-	Out("Setting up resign.")
+	Out("Setting up resign")
 	GoPortal()
 	EnterArea()
+	Out("Go back")
 	Move(10767, -13273)
 	RndSleep(2500)
 	WaitMapLoading($SEITUNG_HARBOR)
@@ -240,40 +244,14 @@ Func HardLeave()
 	WaitMapLoading()
 EndFunc ;HardLeave
 
-Func MoveAndUseSkills($aX, $aY)
-	Local $lBlocked = 0
-	Local $me
-	Local $lastHP = 0
-
-	Out("Moving on Farming-Route!")
-	;Out("Moving to "&string($aX)&", "&string($aY))
-	Move($aX, $aY)
-	Do
-		Sleep(40)
-
-		If GetIsDead() Then RndSleep(10000)
-
-		$me = GetAgentByID(-2)
-		If DllStructGetData($me, 'HP') < $lastHP Then
-			if Nuke()==0 Then return 0
-			Move($aX, $aY, 100)
-			;Out("Moving to "&string($aX)&", "&string($aY))
-			Out("Moving on Farming-Route!")
-		EndIf
-		KeepUpBoon()
-		$lastHP = DllStructGetData($me, 'HP')
-		If GetIsMoving($me) = False Then
-			$lBlocked += 1
-			Move($aX, $aY, 100)
-		EndIf
-
-	Until ComputeDistance(DllStructGetData($me, 'X'), DllStructGetData($me, 'Y'), $aX, $aY) < 110 Or $lBlocked > 8
-
-	Return 1
-EndFunc ;MoveAndUseSkills
+Func Dist($x1, $y1, $x2, $y2)
+	$x1 = ($x1-$x2)*($x1-$x2)
+	$y1 = ($y1-$y2)*($y1-$y2)
+	Return Sqrt($x1+$y2)
+EndFunc ;Dist
 
 Func Farm()
-	Out("Calculating waypoints...")
+	Out("Start farming")
 	Local $route = CreateFarmingRoute()
 	Out("Running to farming route")
 	MoveTo(9545,-11478)
@@ -281,26 +259,26 @@ Func Farm()
 	Local $i = 0
 	While $i < UBound($route, 1)
 		KeepUpBoon()
-		If Not MoveAndUseSkills($route[$i][0], $route[$i][1]) Then
+		If Not AttackMove($route[$i][0], $route[$i][1]) Then
 			If GetIsDead() Then
 				$Deaths += 1
 				GUICtrlSetData($LabelDeaths, $Deaths)
-				while GetIsDead()
+				While GetIsDead()
 					RndSleep(3000)
 				WEnd
-				Local $p = (1 - DllStructGetData(GetAgentByID(-2),'MaxHP') / $MAX_HP) * 100
-				If (1 - DllStructGetData(GetAgentByID(-2),'MaxHP') / $MAX_HP) * 100 > 40 Then
+
+				If TooMuchDp() Then
 					Out("Too much DP... Restarting")
 					HardLeave()
 					Return False
 				EndIf
+
 				$i = 0
 				Local $x = DllStructGetData(GetAgentByID(-2),'X'),$y = DllStructGetData(GetAgentByID(-2),'Y')
 				For $j = 1 To UBound($route) - 1
 					if Dist($x, $y, $route[$i][0], $route[$i][1]) > Dist($x, $y, $route[$j][0], $route[$j][1]) Then $i = $j
 				Next
 			EndIf
-			Return False
 		EndIf
 		$i += 1
 	WEnd
@@ -309,89 +287,85 @@ Func Farm()
 	Return True
 EndFunc ;Farm
 
-Func Dist($x1, $y1, $x2, $y2)
-	$x1 = ($x1-$x2)*($x1-$x2)
-	$y1 = ($y1-$y2)*($y1-$y2)
-	Return Sqrt($x1+$y2)
-EndFunc ;Dist
+Func TooMuchDp()
+	Local $p = (1 - DllStructGetData(GetAgentByID(-2),'MaxHP') / $MAX_HP) * 100
+	Return (1 - DllStructGetData(GetAgentByID(-2),'MaxHP') / $MAX_HP) * 100 > 40
+EndFunc
 
-Func Nuke()
-	Out("Kill them all")
-	$deadlock = 0
-	$target = GetNearestEnemyToAgent(-2)
-	Local $me = GetAgentByID(-2)
-	Local $e = 0, $shouldmove = False
-	Do
-		if GetIsDead() Then
-			;HardLeave()
-			Out("Found ourself dead")
-			return 0
-		EndIf
-		RndSleep(50)
-		$deadlock += 100
-		$e = GetEnergy($me)
-		if GetSkillBarSkillRecharge(3) = 0 and DllStructGetData($me, 'HP') < 1/2 Then
-			UseSkillEx(3, -2)
-		Else
-			KeepUpBoon()
-			If GetSkillBarSkillRecharge(6) = 0 Then
-				If $e >= 15 Then UseSkillEx(6, -2)
-			ElseIf GetSkillBarSkillRecharge(5) = 0 Then
-				If $e >= 5 Then UseSkillEx(5, -2)
-			ElseIf GetSkillBarSkillRecharge(4) = 0 Then
-				If $e >= 5 Then UseSkillEx(4, -2)
-			ElseIf GetSkillBarSkillRecharge(3) = 0 Then
-				UseSkillEx(3, -2)
-			ElseIf GetSkillBarSkillRecharge(2) = 0 Then
-				If $e >= 15 Then UseSkillEx(2, -2)
-			ElseIf GetSkillBarSkillRecharge(1) = 0 Then
-				If $e >= 5 Then UseSkillEx(1, -2)
-			Else
-				Attack($target)
-			EndIf
-		EndIf
-		$target = GetNearestEnemyToAgent(-2)
-		ChangeTarget($target)
-	Until DllStructGetData($target, 'HP') = 0 Or GetNumberOfFoesInRangeOfAgent1(-2, 1012) = 0 Or $deadlock > 6000 Or GetDistance($target, -2) > 1150
-	Sleep(3000)
+Func AttackMove($x, $y)
+    Local $timer = TimerInit(), $iBlocked = 0
+	Out("Hunting " & $x & " " & $y)
 
-	Out("Picking up items")
-	PickUpLoot()
-	Out("Waiting for CD")
-	Local $lastHP = DllStructGetData($me, 'HP')
 	Do
-		if GetIsDead() Then
-			Out("Found ourself dead")
-			return 0
-		EndIf
-		If DllStructGetData($me, 'HP') < $lastHP Then
-			if Nuke()==0 Then return 0
-		EndIf
+		If GetIsDead() Then Return False
+		Do
+			Move($x, $y)
+			RndSleep(250)
+		Until EnemyInRange() Or ReachedDestination($x, $y)
+
+		If EnemyInRange() Then
+			Fight()
+			Loot()
+		EndiF
+
+		WaitRecharge()
+
+		$iBlocked += 1
+	Until ReachedDestination($x, $y) Or $iBlocked > 20
+	RndSleep(250)
+	Return True
+EndFunc ;AttackMove
+
+#Region Fight
+Func Fight()
+	$target = GetNearestEnemyToAgent()
+	ChangeTarget($target)
+	RndSleep(150)
+
+	Do
+		If GetIsDead() Then Return False
 		KeepUpBoon()
-		$lastHP = DllStructGetData($me, 'HP')
-		Sleep(Random(1000,2000))
-		$i=0
-		If GetSkillBarSkillRecharge(3) == 0 Then
-			$i = $i + 1
-		EndIf
-		If GetSkillBarSkillRecharge(4) == 0 Then
-			$i = $i + 1
-		EndIf
-		If GetSkillBarSkillRecharge(5) == 0 Then
-			$i = $i + 1
-		EndIf
-		If GetSkillBarSkillRecharge(6) == 0 Then
-			$i = $i + 1
-		EndIf
-	Until $i > 2
-	return 1
-EndFunc ;Nuke
+		CallTarget($target)
+        RndSleep(150)
 
-Func MoveAway($start,$target)
-	$xdiff = DllStructGetData($start,"X")-DllStructGetData($target,"X")
-	$ydiff = DllStructGetData($start,"Y")-DllStructGetData($target,"Y")
-	MoveTo(DllStructGetData($start,"X")+Random()*$xdiff,DllStructGetData($start,"Y")+Random()*$ydiff)
-EndFunc ;MoveAway
+		Do
+			If GetIsDead() Then Return False
+			Attack($target)
+			KeepUpBoon()
+			UseSkills()
+			RndSleep(150)
+        Until Not TargetIsAlive()
+
+		$target = GetNearestEnemyToAgent()
+		ChangeTarget($target)
+		RndSleep(300)
+	Until $target = 0 Or Not TargetIsInRange()
+	RndSleep(250)
+	Return True
+EndFunc ;Fight
+
+Func UseSkills()
+	For $i = 0 To 7
+		If Not TargetIsAlive() Then ExitLoop
+		$recharge = DllStructGetData(GetSkillBar(), "Recharge" & $i + 1)
+
+		If Not TargetIsSpiritRange() And $i < 6 Then ContinueLoop
+		If $recharge = 0 And GetEnergy() >= $SkillEnergy[$i] Then
+			$useSkill = $i + 1
+			UseSkill($useSkill, GetCurrentTarget())
+			RndSleep($SkillCastTime[$i] + 500)
+		EndIf
+	Next
+EndFunc ;UseSkill
+
+Func WaitRecharge()
+	Local $j = 0
+	For $i = 1 To 5
+		If GetSkillbarSkillRecharge($i) Then $j += 1
+	Next
+	Return $j > 2
+EndFunc ;WaitRecharge
+#EndRegion Fight
 
 Func KeepUpBoon()
 	If GetSkillBarSkillRecharge(8) == 0 And DllStructGetData(GetEffect(1230), 'SkillID') <> 1230 and GetEnergy(-2)>=10 Then UseSkillEx(8, -2)
@@ -400,48 +374,33 @@ Func KeepUpBoon()
 EndFunc ;KeepUpBoon
 
 Func GoMerchant()
-	MoveTo(16821,9924,100)
-	RndSleep(600)
-	MoveTo(16568,11932,100)
-	RndSleep(600)
-	MoveTo(17219,12378)
-	RndSleep(600)
+	;RndSleep(600)
 	GoToNPC(GetNearestNPCToCoords(17219,12378))
 EndFunc ;GoMerchant
 
 #Region Loot
-Func PickUpLoot()
-	Local $me
-	Local $lBlockedTimer
-	Local $lBlockedCount = 0
-	Local $JAYA_BLUFFtemExists = True
-	For $i = 1 To GetMaxAgents()
-		$lAgent = GetAgentByID($i)
-		if CountSlots()=0 Then Return False
-		If Not GetIsMovable($lAgent) Then ContinueLoop
-		If Not GetCanPickUp($lAgent) Then ContinueLoop
-		$JAYA_BLUFFtem = GetItemByAgentID($i)
-		If CanPickup($JAYA_BLUFFtem) Then
-			Do
-				If GetDistance($JAYA_BLUFFtem) > 150 Then Move(DllStructGetData($JAYA_BLUFFtem, 'X'), DllStructGetData($JAYA_BLUFFtem, 'Y'))
-				PickUpItem($JAYA_BLUFFtem)
-				Sleep(GetPing())
-				Do
-					If GetIsDead() Then Return False
-					Sleep(100)
-					$me = GetAgentByID(-2)
-				Until DllStructGetData($me, 'MoveX') == 0 And DllStructGetData($me, 'MoveY') == 0
-				$lBlockedTimer = TimerInit()
-				Do
-					If GetIsDead() Then Return False
-					Sleep(3)
-					$JAYA_BLUFFtemExists = IsDllStruct(GetAgentByID($i))
-				Until Not $JAYA_BLUFFtemExists Or TimerDiff($lBlockedTimer) > Random(5000, 7500, 1)
-				If $JAYA_BLUFFtemExists Then $lBlockedCount += 1
-			Until Not $JAYA_BLUFFtemExists Or $lBlockedCount > 5
-		EndIf
-	Next
-EndFunc ;PickUpLoot
+Func Loot()
+	Local $agent, $agentID, $deadlock
+    Out("Looting")
+
+    If GetIsDead() Then Return False
+    If InventoryIsFull() Then Return False ;full inventory dont try to pick up
+
+    For $agentID = 1 To GetMaxAgents()
+        $agent = GetAgentByID($agentID)
+		If Not GetIsMovable($agent) Or Not GetCanPickUp($agent) Then ContinueLoop
+        $item = GetItemByAgentID($agentID)
+
+        If Not CanPickUp($item) Then ContinueLoop
+        PickUpItem($item)
+
+        $deadlock = TimerInit()
+        While IsDllStruct(GetAgentByID($agentID))
+            Sleep(100)
+            If TimerDiff($deadlock) > 10000 Then ExitLoop
+        WEnd
+    Next
+EndFunc ;Loot
 
 Func CanPickUp($item)
 	Local $ModelID = DllStructGetData($item, 'ModelID')
@@ -495,32 +454,28 @@ Func _exit()
 EndFunc ;_exit
 #EndRegion Helpers
 
-;=================================================================================================
-; Function:            GetNearestItemToAgent($aAgent)
-; Description:        Get nearest item lying on floor around $aAgent ($aAgent = -2 ourself), necessary to work with PickUpItems Func
-; Parameter(s):        $aAgent: ID of Agent
-; Requirement(s):    GW must be running and Memory must have been scanned for pointers (see Initialize())
-; Return Value(s):    On Success - Returns ID of nearest item
-;                    @extended  - distance to item
-; Author(s):        GWCA team, recoded by ddarek
-;=================================================================================================
-Func GetNumberOfFoesInRangeOfAgent1($aAgent = -2, $fMaxDistance = 1012)
-	Local $lDistance, $lCount = 0
+#Region FightHelpers
+Func ReachedDestination($x, $y)
+	$me = GetAgentByID()
+	$distance = ComputeDistance(DllStructGetData($me, 'X'), DllStructGetData($me, 'Y'), $x, $y)
+	Return $distance < 250
+EndFunc ;ReachedDestination
+Func EnemyInRange()
+	$enemy = GetNearestEnemyToAgent()
+    If $enemy = 0 Then Return False
 
-	If IsDllStruct($aAgent) = 0 Then $aAgent = GetAgentByID($aAgent)
-	For $i = 1 To GetMaxAgents()
-		$lAgentToCompare = GetAgentByID($i)
-		If GetIsDead($lAgentToCompare) <> 0 Then ContinueLoop
-		If DllStructGetData($lAgentToCompare, 'Allegiance') = 0x3 Or DllStructGetData($lAgentToCompare, 'Type') = 0xDB Then
-			$lDistance = GetDistance($lAgentToCompare, $aAgent)
-			If $lDistance < $fMaxDistance Then
-				$lCount += 1
-			EndIf
-		EndIf
-	Next
-
-	Return $lCount
-EndFunc   ;==>GetNumberOfFoesInRangeOfAgent
+	Return GetDistance($enemy) < 1200
+EndFunc ;EnemyInRange
+Func TargetIsAlive()
+	Return DllStructGetData(GetCurrentTarget(), 'HP') > 0 And DllStructGetData(GetCurrentTarget(), 'Effects') <> 0x0010
+EndFunc ;TargetIsAlive
+Func TargetIsInRange()
+	Return GetDistance(GetCurrentTarget()) < 1200
+EndFunc ;TargetIsInRange
+Func TargetIsSpiritRange()
+	Return GetDistance(GetCurrentTarget()) < 800
+EndFunc ;TargetIsSpiritRange
+#EndRegion FightHelpers
 
 #Region Memory
 Func ReduceMemory()
