@@ -9,7 +9,7 @@
 #include "../GWA2.au3"
 #include <farmingroute.au3>
 #include <GuiEdit.au3>
-#include "SimpleInventory.au3"
+#include "../SimpleInventory.au3"
 #NoTrayIcon
 
 #Region Constants
