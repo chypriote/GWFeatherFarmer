@@ -110,7 +110,6 @@ WEnd
 Func MainLoop()
     If GetMapID() == $SEITUNG_HARBOR Then EnterArea()
 	
-    $INITIAL_GOLD = GetGoldCharacter()
     $TOTAL_GOLDS += GetGoldCharacter() - $INITIAL_GOLD
     GUICtrlSetData($LabelGolds, $TOTAL_GOLDS)
     $TOTAL_RUNS += 1
@@ -138,8 +137,10 @@ Func Setup()
     LoadSkillTemplate($SkillBarTemplate)
     SwitchMode(False)
 
+    Inventory()
     RndSleep(500)
     SetupResign()
+    $INITIAL_GOLD = GetGoldCharacter()
 EndFunc ;Setup
 
 Func SetupResign()
@@ -187,7 +188,7 @@ Func GUI_EventHandler()
         Case $GUI_EVENT_CLOSE
             Exit
         Case $cbxHideGW
-            If GUICtrlRead($cbxHideGW) = 1 Then
+            If GUICtrlRead($cbxHideGW) == 1 Then
                 DisableRendering()
                 AdlibRegister("reduceMemory", 20000)
                 WinSetState(GetWindowHandle(), "", @SW_HIDE)
@@ -205,14 +206,14 @@ Func Init()
         GUICtrlSetData($StartButton, "Initializing...")
         GUICtrlSetState($StartButton, $GUI_DISABLE)
         GUICtrlSetState($CharacterName, $GUI_DISABLE)
-        If GUICtrlRead($CharacterName) = "" Then
-            If Initialize(ProcessExists("gw.exe")) = False Then
+        If GUICtrlRead($CharacterName) == "" Then
+            If Not Initialize(ProcessExists("gw.exe")) Then
                 MsgBox(0, "Error", "Guild Wars Is not running.")
                 Exit
             EndIf
             $gwpid=ProcessExists("gw.exe")
         Else
-            If Initialize(GUICtrlRead($CharacterName), True, True) = False Then
+            If Not Initialize(GUICtrlRead($CharacterName), True, True) Then
                 MsgBox(0, "Error", "Can't find a Guild Wars client with that character name.")
                 Exit
             EndIf
@@ -220,7 +221,7 @@ Func Init()
             For $i = 1 To $lWinList[0][0]
                 $mGWHwnd = $lWinList[$i][1]
                 MemoryOpen($mGWHwnd)
-                If StringRegExp(ScanForCharname(), GUICtrlRead($CharacterName)) = 1 Then
+                If StringRegExp(ScanForCharname(), GUICtrlRead($CharacterName)) Then
                     $gwpid = $mGWHwnd
                     ExitLoop
                 EndIf
@@ -292,7 +293,7 @@ Func TooMuchDp()
 EndFunc
 
 Func AttackMove($x, $y)
-    Local $timer = TimerInit(), $iBlocked = 0
+    Local $iBlocked = 0
     Out("Hunting " & $x & " " & $y)
 
     Do
@@ -311,12 +312,14 @@ Func AttackMove($x, $y)
 
         $iBlocked += 1
     Until ReachedDestination($x, $y) Or $iBlocked > 20
+    If $iBlocked > 20 Then Return False
     RndSleep(250)
     Return True
 EndFunc ;AttackMove
 
 #Region Fight
 Func Fight()
+    Local $iBlocked = 0
     $target = GetNearestEnemyToAgent()
     ChangeTarget($target)
     RndSleep(150)
@@ -327,18 +330,20 @@ Func Fight()
         CallTarget($target)
         RndSleep(150)
 
+        Local $lDeadlock = TimerInit()
         Do
             If GetIsDead() Then Return False
             Attack($target)
             KeepUpBoon()
             UseSkills()
             RndSleep(150)
-        Until Not TargetIsAlive()
+        Until Not TargetIsAlive() Or TimerDiff($lDeadlock) > 10000
 
         $target = GetNearestEnemyToAgent()
         ChangeTarget($target)
         RndSleep(300)
-    Until $target = 0 Or Not TargetIsInRange()
+        $iBlocked += 1
+    Until $target == 0 Or Not TargetIsInRange() Or $iBlocked > 20
     RndSleep(250)
     Return True
 EndFunc ;Fight
@@ -349,7 +354,8 @@ Func UseSkills()
         $recharge = DllStructGetData(GetSkillBar(), "Recharge" & $i + 1)
 
         If Not TargetIsSpiritRange() And $i < 6 Then ContinueLoop
-        If $recharge = 0 And GetEnergy() >= $SkillEnergy[$i] Then
+        If $recharge == 0 And GetEnergy() >= $SkillEnergy[$i] Then
+            Out("Using skill " & $i)
             $useSkill = $i + 1
             UseSkill($useSkill, GetCurrentTarget())
             RndSleep($SkillCastTime[$i] + 500)
@@ -367,14 +373,14 @@ EndFunc ;WaitRecharge
 #EndRegion Fight
 
 Func KeepUpBoon()
-    If GetSkillBarSkillRecharge(8) == 0 And DllStructGetData(GetEffect(1230), 'SkillID') <> 1230 and GetEnergy(-2)>=10 Then UseSkillEx(8, -2)
+    If GetSkillBarSkillRecharge(8) == 0 And DllStructGetData(GetEffect(1230), 'SkillID') <> 1230 and GetEnergy(-2)>=10 Then UseSkill(8, -2)
     RndSleep(250)
-    If GetSkillBarSkillRecharge(7) == 0 And DllStructGetData(GetEffect(1229), 'SkillID') <> 1229 and GetEnergy(-2)>=5 Then UseSkillEx(7, -2)
+    If GetSkillBarSkillRecharge(7) == 0 And DllStructGetData(GetEffect(1229), 'SkillID') <> 1229 and GetEnergy(-2)>=5 Then UseSkill(7, -2)
 EndFunc ;KeepUpBoon
 
 Func GoMerchant()
-    ;RndSleep(600)
-    GoToNPC(GetNearestNPCToCoords(17219,12378))
+    Out("Our Merch")
+    GoToNPC(GetNearestNPCToCoords(17219, 12378))
 EndFunc ;GoMerchant
 
 #Region Loot
@@ -387,16 +393,17 @@ Func Loot()
 
     For $agentID = 1 To GetMaxAgents()
         $agent = GetAgentByID($agentID)
-        If Not GetIsMovable($agent) Or Not GetCanPickUp($agent) Then ContinueLoop
+        If Not GetIsMovable($agent) Or Not GetCanPickUp($agent) Or InventoryIsFull() Then ContinueLoop
         $item = GetItemByAgentID($agentID)
 
         If Not CanPickUp($item) Then ContinueLoop
         PickUpItem($item)
+        Out("Picking up " & $agentID)
 
         $deadlock = TimerInit()
         While IsDllStruct(GetAgentByID($agentID))
             Sleep(100)
-            If TimerDiff($deadlock) > 10000 Then ExitLoop
+            If TimerDiff($deadlock) > 11000 Then ExitLoop
         WEnd
     Next
 EndFunc ;Loot
@@ -461,7 +468,7 @@ Func ReachedDestination($x, $y)
 EndFunc ;ReachedDestination
 Func EnemyInRange()
     $enemy = GetNearestEnemyToAgent()
-    If $enemy = 0 Then Return False
+    If $enemy == 0 Then Return False
 
     Return GetDistance($enemy) < 1200
 EndFunc ;EnemyInRange
@@ -472,7 +479,7 @@ Func TargetIsInRange()
     Return GetDistance(GetCurrentTarget()) < 1200
 EndFunc ;TargetIsInRange
 Func TargetIsSpiritRange()
-    Return GetDistance(GetCurrentTarget()) < 800
+    Return GetDistance(GetCurrentTarget()) < 1000
 EndFunc ;TargetIsSpiritRange
 #EndRegion FightHelpers
 
