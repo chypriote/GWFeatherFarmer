@@ -1,5 +1,4 @@
 #include-once
-#include "GWA2_Headers.au3"
 #include <ButtonConstants.au3>
 #include <EditConstants.au3>
 #include <GUIConstantsEx.au3>
@@ -7,7 +6,7 @@
 #include <WindowsConstants.au3>
 #include <ComboConstants.au3>
 #include <ScrollBarsConstants.au3>
-#include <GWA2.au3>
+#include "../GWA2.au3"
 #include <farmingroute.au3>
 #include <GuiEdit.au3>
 #include "SimpleInventory.au3"
