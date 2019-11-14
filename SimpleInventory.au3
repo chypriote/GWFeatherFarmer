@@ -91,6 +91,7 @@ Func CanStore($item)
 	If $ModelID == 955 								Then Return False ;Granite
 	If $ModelID == $ITEM_ID_BONES 					Then Return True ;Bones
 	If $ModelID == 953 								Then Return False ;Scales
+	If $ModelID == $ITEM_ID_FEATHERED_CREST 		Then Return True
 	If InArray($ModelID, $SPECIAL_DROPS)            Then Return False
 	If InArray($ModelID, $ALL_TOMES_ARRAY)		    Then Return True ;Tomes
 	If InArray($ModelID, $ALL_MATERIALS_ARRAY)		Then Return True ;Materials
@@ -293,6 +294,7 @@ Func CanSell($item)
 	If $ModelID == 940 Then Return True ;Tanned
 	If $ModelID == 953 Then Return True ;Scales
 	If $ModelID == $ITEM_ID_BONES Then Return False ;Bones
+	If $ModelID == $ITEM_ID_FEATHERED_CREST Then Return False
     If InArray($ModelID, $SPECIAL_DROPS)            Then Return False
 	If InArray($ModelID, $ALL_TOMES_ARRAY)		  	Then Return False ;Tomes
 	If InArray($ModelID, $ALL_MATERIALS_ARRAY)		Then Return False ;Materials
