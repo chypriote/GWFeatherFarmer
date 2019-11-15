@@ -380,7 +380,6 @@ Func KeepUpBoon()
 EndFunc ;KeepUpBoon
 
 Func GoMerchant()
-    Out("Our Merch")
     GoToNPC(GetNearestNPCToCoords(17219, 12378))
 EndFunc ;GoMerchant
 
