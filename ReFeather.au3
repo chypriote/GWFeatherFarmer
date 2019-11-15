@@ -114,7 +114,7 @@ Func MainLoop()
     GUICtrlSetData($LabelGolds, $TOTAL_GOLDS)
     $TOTAL_RUNS += 1
     GUICtrlSetData($LabelRun, $TOTAL_RUNS)
-	
+
     Farm()
 
     Out("Returning to Harbor")
@@ -137,7 +137,7 @@ Func Setup()
     LoadSkillTemplate($SkillBarTemplate)
     SwitchMode(False)
 
-    Inventory()
+    If CountSlots() < 10 Then Inventory()
     RndSleep(500)
     SetupResign()
     $INITIAL_GOLD = GetGoldCharacter()
@@ -180,6 +180,7 @@ Func EnterArea()
         MoveTo(16800, 17500)
         WaitMapLoading()
     Until GetMapID() == $JAYA_BLUFF
+    RndSleep(1000)
 EndFunc ;EnterArea
 #EndRegion Setup
 

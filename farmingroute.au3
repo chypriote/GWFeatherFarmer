@@ -2,7 +2,8 @@
 
 Func CreateFarmingRoute()
     Out("Calculating waypoints")
-    local $temproute1[1],  $temproute2[1]
+    Local $temproute1[1], $temproute2[1]
+
     _ArrayAdd($temproute1, 12020)
     _ArrayAdd($temproute2, -6218)
     _ArrayAdd($temproute1, 12021)
@@ -29,6 +30,7 @@ Func CreateFarmingRoute()
         _ArrayAdd($temproute1, -492)
         _ArrayAdd($temproute2, 2537)
         _ArrayAdd($temproute1, -2256)
+        _ArrayAdd($temproute2, 2418)
         _ArrayAdd($temproute1, -3205)
         _ArrayAdd($temproute2, 2418)
         _ArrayAdd($temproute1, -3691)
@@ -121,11 +123,12 @@ Func CreateFarmingRoute()
         _ArrayAdd($temproute1, -12757)
         _ArrayAdd($temproute2, 3277)
     EndIf
+
     Local $route[UBound($temproute1)-1][2]
     For $i = 1 To UBound($temproute1) - 1
         $route[$i-1][0] = $temproute1[$i]
         $route[$i-1][1] = $temproute2[$i]
     Next
-    Sleep(Random(1000, 2000))
+    RndSleep(1500)
     Return $route
 EndFunc   ;==>Farm
