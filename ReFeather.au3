@@ -22,15 +22,6 @@ Global Const $SkillBarTemplate = "OACjAqiK5OPur53sce2gmNTnJA"
 
 Global $SkillEnergy[8] = [5, 15, 0, 5, 5, 15, 5, 10]
 Global $SkillCastTime[8] = [750, 1000, 750, 750, 1000, 1000, 2000, 2000]
-
-; === Materials and usefull Items ===
-Global Const $ITEM_ID_FEATHER = 933
-Global Const $ITEM_ID_FEATHERED_CREST = 835
-Global Const $ITEM_ID_BONES = 921
-Global Const $ITEM_ID_DUST = 929
-Global Const $ITEM_ID_DIESSA = 24353
-Global Const $ITEM_ID_RIN = 24354
-Global Const $ITEM_ID_LOCKPICKS = 22751
 #EndRegion Constants
 
 #Region Declarations
@@ -430,9 +421,9 @@ Func CanPickUp($item)
         GUICtrlSetData($LabelCrests, $crests)
         Return True
     EndIf
-    If $ModelID == $ITEM_ID_DIESSA Then Return True
-    If $ModelID == $ITEM_ID_RIN Then Return True
-    If $ModelID == $ITEM_ID_LOCKPICKS Then Return True
+    If $ModelID == $ITEM_DIESSA_CHALICE Then Return True
+    If $ModelID == $ITEM_RIN_RELIC_RELIC Then Return True
+    If $ModelID == $ITEM_LOCKPICK Then Return True
     If $ModelID == 22191 Then Return True ; Clover
     If $ModelID == $GOLD_COINS And GetGoldCharacter() < 99000 Then Return True
 
