@@ -1,3 +1,4 @@
+#include-once
 #include <Array.au3>
 
 Func CreateFarmingRoute()

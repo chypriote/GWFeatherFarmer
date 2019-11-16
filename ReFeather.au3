@@ -406,23 +406,21 @@ Func CanPickUp($item)
 
     If $ModelID == $ITEM_DYES And ($ExtraID == $ITEM_BLACK_DYE Or $ExtraID == $ITEM_WHITE_DYE) Then Return True	;Black and White Dye ; for only B/W
     If $rarity == $RARITY_GOLD Then Return True
-    If $ModelID == $ITEM_ID_BONES Then
+    If $ModelID == $MAT_BONES Then
         $bones += DllStructGetData($item, 'Quantity')
         GUICtrlSetData($LabelBones, $bones)
         Return True ;changed to false because too many bones
     EndIf
-    If $ModelID == $ITEM_ID_FEATHER Then
+    If $ModelID == $MAT_FEATHER Then
         $feathers += DllStructGetData($item, 'Quantity')
         GUICtrlSetData($LabelFeathers, $feathers)
         Return True
     EndIf
-    If $ModelID == $ITEM_ID_FEATHERED_CREST Then
+    If $ModelID == $ITEM_FEATHERED_CREST Then
         $crests += 1
         GUICtrlSetData($LabelCrests, $crests)
         Return True
     EndIf
-    If $ModelID == $ITEM_DIESSA_CHALICE Then Return True
-    If $ModelID == $ITEM_RIN_RELIC_RELIC Then Return True
     If $ModelID == $ITEM_LOCKPICK Then Return True
     If $ModelID == 22191 Then Return True ; Clover
     If $ModelID == $GOLD_COINS And GetGoldCharacter() < 99000 Then Return True
