@@ -10,7 +10,7 @@
 #include <farmingroute.au3>
 #include <GuiEdit.au3>
 #include "../SimpleInventory.au3"
-#NoTrayIcon
+AUTOITSETOPTION("TrayIconDebug", 1)
 
 #Region Constants
 ; === Maps ===
@@ -168,7 +168,7 @@ Func EnterArea()
     Out("Enter area")
     MoveTo(17171, 17331)
     RndSleep(200)
-    MoveTo(16800, 17500)
+    Move(16800, 17500)
     WaitMapLoading($JAYA_BLUFF)
     RndSleep(1000)
 EndFunc ;EnterArea
