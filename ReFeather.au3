@@ -40,6 +40,7 @@ Global $TOTAL_RUNS = 0
 Global $Rendering = True
 Global $MAX_HP
 Global $gwpid = -1
+$USE_EXPERT_ID_KIT = False
 
 #Region Gui
 GUICreate("Feather Farm", 210, 290, 100, 100)
@@ -100,7 +101,7 @@ WEnd
 
 Func MainLoop()
     If GetMapID() == $SEITUNG_HARBOR Then EnterArea()
-	
+
     $TOTAL_GOLDS += GetGoldCharacter() - $INITIAL_GOLD
     GUICtrlSetData($LabelGolds, $TOTAL_GOLDS)
     $TOTAL_RUNS += 1
@@ -113,7 +114,7 @@ Func MainLoop()
     RndSleep(4000)
     ReturnToOutpost()
     WaitMapLoading($SEITUNG_HARBOR)
-    If InventoryIsFull() Then 
+    If InventoryIsFull() Then
         Inventory()
         GoPortal()
     EndIf
@@ -165,12 +166,10 @@ EndFunc ;GoPortal
 
 Func EnterArea()
     Out("Enter area")
-    Do
-        MoveTo(17171, 17331)
-        RndSleep(200)
-        MoveTo(16800, 17500)
-        WaitMapLoading()
-    Until GetMapID() == $JAYA_BLUFF
+    MoveTo(17171, 17331)
+    RndSleep(200)
+    MoveTo(16800, 17500)
+    WaitMapLoading($JAYA_BLUFF)
     RndSleep(1000)
 EndFunc ;EnterArea
 #EndRegion Setup
@@ -248,32 +247,33 @@ Func Farm()
     Out("Running to farming route")
     MoveTo(9545,-11478)
     MoveTo(11226,-9199,100)
-    Local $i = 0
-    While $i < UBound($route, 1)
+
+    For $i = 0 To UBound($route, 1)
         KeepUpBoon()
+        If InventoryIsFull() Then ContinueLoop
         If Not AttackMove($route[$i][0], $route[$i][1]) Then
             If GetIsDead() Then
                 $Deaths += 1
                 GUICtrlSetData($LabelDeaths, $Deaths)
-                While GetIsDead()
-                    RndSleep(3000)
-                WEnd
+                HardLeave()
+                ;While GetIsDead()
+                ;    RndSleep(3000)
+                ;WEnd
 
-                If TooMuchDp() Then
-                    Out("Too much DP... Restarting")
-                    HardLeave()
-                    Return False
-                EndIf
+                ;If TooMuchDp() Then
+                ;    Out("Too much DP... Restarting")
+                ;    HardLeave()
+                ;    Return False
+                ;EndIf
 
-                $i = 0
-                Local $x = DllStructGetData(GetAgentByID(-2),'X'),$y = DllStructGetData(GetAgentByID(-2),'Y')
-                For $j = 1 To UBound($route) - 1
-                    if Dist($x, $y, $route[$i][0], $route[$i][1]) > Dist($x, $y, $route[$j][0], $route[$j][1]) Then $i = $j
-                Next
+                ;$i = 0
+                ;Local $x = DllStructGetData(GetAgentByID(-2),'X'),$y = DllStructGetData(GetAgentByID(-2),'Y')
+                ;For $j = 1 To UBound($route) - 1
+                ;    if Dist($x, $y, $route[$i][0], $route[$i][1]) > Dist($x, $y, $route[$j][0], $route[$j][1]) Then $i = $j
+                ;Next
             EndIf
         EndIf
-        $i += 1
-    WEnd
+    Next
     RndSleep(200)
     Out("Run succesful")
     Return True
@@ -291,20 +291,27 @@ Func AttackMove($x, $y)
     Do
         If GetIsDead() Then Return False
         Do
+            Out("moving "& $iBlocked)
             Move($x, $y)
             RndSleep(250)
         Until EnemyInRange() Or ReachedDestination($x, $y)
 
         If EnemyInRange() Then
+            Out("Enemy in range " & $iBlocked)
             Fight()
+            Out("fight "& $iBlocked)
             Loot()
+            Out("Finished looting")
         EndiF
 
+        Out("wait recharge")
         WaitRecharge()
 
+        Out("next " & $iBlocked)
         $iBlocked += 1
-    Until ReachedDestination($x, $y) Or $iBlocked > 20
-    If $iBlocked > 20 Then Return False
+    Until ReachedDestination($x, $y) Or $iBlocked > 5
+    Out("Reached destination " & $iBlocked)
+    If $iBlocked > 5 Then Return False
     RndSleep(250)
     Return True
 EndFunc ;AttackMove
@@ -317,6 +324,7 @@ Func Fight()
     RndSleep(150)
 
     Do
+        Out("Fighting " & $iBlocked)
         If GetIsDead() Then Return False
         KeepUpBoon()
         CallTarget($target)
@@ -335,7 +343,8 @@ Func Fight()
         ChangeTarget($target)
         RndSleep(300)
         $iBlocked += 1
-    Until $target == 0 Or Not TargetIsInRange() Or $iBlocked > 20
+    Until $target == 0 Or Not TargetIsInRange() Or $iBlocked > 5
+
     RndSleep(250)
     Return True
 EndFunc ;Fight
@@ -347,7 +356,6 @@ Func UseSkills()
 
         If Not TargetIsSpiritRange() And $i < 6 Then ContinueLoop
         If $recharge == 0 And GetEnergy() >= $SkillEnergy[$i] Then
-            Out("Using skill " & $i)
             $useSkill = $i + 1
             UseSkill($useSkill, GetCurrentTarget())
             RndSleep($SkillCastTime[$i] + 500)
@@ -376,26 +384,42 @@ EndFunc ;GoMerchant
 
 #Region Loot
 Func Loot()
-    Local $agent, $agentID, $deadlock
-    Out("Looting")
+    Local $me, $agent, $item
+    Local $lBlockedTimer
+    Local $lBlockedCount = 0
 
-    If GetIsDead() Then Return False
-    If InventoryIsFull() Then Return False ;full inventory dont try to pick up
+    For $i = 1 To GetMaxAgents()
+        Out("Looting " & $lBlockedCount)
+        If GetIsDead() Then Return
+        If InventoryIsFull() Then ContinueLoop
+        $me = GetAgentByID(-2)
+        $agent = GetAgentByID($i)
+        Out("Looting Ex")
+        If Not GetIsMovable($agent) Or Not GetCanPickUp($agent) Then
+            Out("Looting Hugh")
+            ContinueLoop
+        EndIf
+        Out("Looting Grec")
+        $item = GetItemByAgentID($i)
 
-    For $agentID = 1 To GetMaxAgents()
-        $agent = GetAgentByID($agentID)
-        If Not GetIsMovable($agent) Or Not GetCanPickUp($agent) Or InventoryIsFull() Then ContinueLoop
-        $item = GetItemByAgentID($agentID)
-
-        If Not CanPickUp($item) Then ContinueLoop
-        PickUpItem($item)
-        Out("Picking up " & $agentID)
-
-        $deadlock = TimerInit()
-        While IsDllStruct(GetAgentByID($agentID))
-            Sleep(100)
-            If TimerDiff($deadlock) > 11000 Then ExitLoop
-        WEnd
+        If CanPickUp($item) Then
+            $itemExists = True
+            Do
+                Out("Looting Grec " & $lBlockedCount)
+                PickUpItem($item)
+                RndSleep(100)
+                Do
+                    Sleep(100)
+                    $me = GetAgentByID(-2)
+                Until DllStructGetData($me, 'MoveX') == 0 And DllStructGetData($me, 'MoveY') == 0
+                $lBlockedTimer = TimerInit()
+                Do
+                    Sleep(3)
+                    $itemExists = IsDllStruct(GetAgentByID($i))
+                Until Not $itemExists Or TimerDiff($lBlockedTimer) > Random(5000, 7500, 1)
+                If $itemExists Then $lBlockedCount += 1
+            Until Not $itemExists Or $lBlockedCount > 5
+        EndIf
     Next
 EndFunc ;Loot
 
@@ -404,8 +428,9 @@ Func CanPickUp($item)
     Local $ExtraID = DllStructGetData($item, 'ExtraID')
     Local $rarity = GetRarity($item)
 
-    If $ModelID == $ITEM_DYES And ($ExtraID == $ITEM_BLACK_DYE Or $ExtraID == $ITEM_WHITE_DYE) Then Return True	;Black and White Dye ; for only B/W
     If $rarity == $RARITY_GOLD Then Return True
+    If $ModelID == $ITEM_DYES And ($ExtraID == $ITEM_BLACK_DYE Or $ExtraID == $ITEM_WHITE_DYE) Then Return True	;Black and White Dye ; for only B/W
+
     If $ModelID == $MAT_BONES Then
         $bones += DllStructGetData($item, 'Quantity')
         GUICtrlSetData($LabelBones, $bones)
@@ -422,11 +447,10 @@ Func CanPickUp($item)
         Return True
     EndIf
     If $ModelID == $ITEM_LOCKPICK Then Return True
-    If $ModelID == 22191 Then Return True ; Clover
+    If $ModelID == $DPREMOVAL_CLOVER Then Return True
     If $ModelID == $GOLD_COINS And GetGoldCharacter() < 99000 Then Return True
 
-    Return True ;Added to gather everything
-    Return False
+    Return True ;Added to gather everythings
 EndFunc ;CanPickUp
 #EndRegion Loot
 
