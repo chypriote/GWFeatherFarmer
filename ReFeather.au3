@@ -256,21 +256,6 @@ Func Farm()
                 $Deaths += 1
                 GUICtrlSetData($LabelDeaths, $Deaths)
                 HardLeave()
-                ;While GetIsDead()
-                ;    RndSleep(3000)
-                ;WEnd
-
-                ;If TooMuchDp() Then
-                ;    Out("Too much DP... Restarting")
-                ;    HardLeave()
-                ;    Return False
-                ;EndIf
-
-                ;$i = 0
-                ;Local $x = DllStructGetData(GetAgentByID(-2),'X'),$y = DllStructGetData(GetAgentByID(-2),'Y')
-                ;For $j = 1 To UBound($route) - 1
-                ;    if Dist($x, $y, $route[$i][0], $route[$i][1]) > Dist($x, $y, $route[$j][0], $route[$j][1]) Then $i = $j
-                ;Next
             EndIf
         EndIf
     Next
@@ -483,13 +468,13 @@ Func EnemyInRange()
     $enemy = GetNearestEnemyToAgent()
     If $enemy == 0 Then Return False
 
-    Return GetDistance($enemy) < 1200
+    Return GetDistance($enemy) < 1100
 EndFunc ;EnemyInRange
 Func TargetIsAlive()
     Return DllStructGetData(GetCurrentTarget(), 'HP') > 0 And DllStructGetData(GetCurrentTarget(), 'Effects') <> 0x0010
 EndFunc ;TargetIsAlive
 Func TargetIsInRange()
-    Return GetDistance(GetCurrentTarget()) < 1200
+    Return GetDistance(GetCurrentTarget()) < 1000
 EndFunc ;TargetIsInRange
 Func TargetIsSpiritRange()
     Return GetDistance(GetCurrentTarget()) < 1000
