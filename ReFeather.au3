@@ -7,7 +7,6 @@
 #include <ComboConstants.au3>
 #include <ScrollBarsConstants.au3>
 #include "../GWA2.au3"
-#include <farmingroute.au3>
 #include <GuiEdit.au3>
 #include "../SimpleInventory.au3"
 AUTOITSETOPTION("TrayIconDebug", 1)
@@ -170,7 +169,6 @@ Func EnterArea()
     RndSleep(200)
     Move(16800, 17500)
     WaitMapLoading($JAYA_BLUFF)
-    RndSleep(1000)
 EndFunc ;EnterArea
 #EndRegion Setup
 
@@ -235,20 +233,56 @@ Func HardLeave()
     WaitMapLoading()
 EndFunc ;HardLeave
 
-Func Dist($x1, $y1, $x2, $y2)
-    $x1 = ($x1-$x2)*($x1-$x2)
-    $y1 = ($y1-$y2)*($y1-$y2)
-    Return Sqrt($x1+$y2)
-EndFunc ;Dist
-
 Func Farm()
-    Out("Start farming")
-    Local $route = CreateFarmingRoute()
     Out("Running to farming route")
-    MoveTo(9545,-11478)
-    MoveTo(11226,-9199,100)
+    MoveTo(9545, -11478)
+    MoveTo(11226, -9199, 100)
 
-    For $i = 0 To UBound($route, 1)
+    Local $route[41][2] = [ _
+        [12020, -6218], _
+        [12021, -5815], _
+        [10069, -6791], _
+        [8678, -6602], _
+        [7020, -5578], _
+        [5033, -4532], _
+        [4202, -1804], _
+        [1519, -763], _
+        [381, 657], _
+        [-499, 1758], _
+        [-492, 2537], _
+        [-2256, 2418], _
+        [-3205, 2418], _
+        [-3691, 888], _
+        [-2551, -521], _
+        [-2458, -1202], _
+        [-3988, -2440], _
+        [-5791, -3179], _
+        [-6375, -3320], _
+        [-6915, -2723], _
+        [-6475, -3140], _
+        [-5503, -3532], _
+        [-2205, -3590], _
+        [-732, -4359], _
+        [-353, -6682], _
+        [-2056, -8224], _
+        [-4218, -7767], _
+        [-6150, -7394], _
+        [-7660, -9095], _
+        [-8455, -7300], _
+        [-8778, -8544], _
+        [-10431, -8705], _
+        [-13613, -4731], _
+        [-14189, -2634], _
+        [-13513, -1885], _
+        [-10872, -3658], _
+        [-12139, -1372], _
+        [-12015, 816], _
+        [-10676, 3225], _
+        [-10009, 3637], _
+        [-10465, 5466] _
+    ]
+
+    For $i = 0 To UBound($route)
         KeepUpBoon()
         If InventoryIsFull() Then ContinueLoop
         If Not AttackMove($route[$i][0], $route[$i][1]) Then
@@ -264,38 +298,26 @@ Func Farm()
     Return True
 EndFunc ;Farm
 
-Func TooMuchDp()
-    Local $p = (1 - DllStructGetData(GetAgentByID(-2),'MaxHP') / $MAX_HP) * 100
-    Return (1 - DllStructGetData(GetAgentByID(-2),'MaxHP') / $MAX_HP) * 100 > 40
-EndFunc
-
 Func AttackMove($x, $y)
     Local $iBlocked = 0
-    Out("Hunting " & $x & " " & $y)
 
     Do
         If GetIsDead() Then Return False
         Do
-            Out("moving "& $iBlocked)
             Move($x, $y)
             RndSleep(250)
         Until EnemyInRange() Or ReachedDestination($x, $y)
 
         If EnemyInRange() Then
-            Out("Enemy in range " & $iBlocked)
             Fight()
-            Out("fight "& $iBlocked)
             Loot()
-            Out("Finished looting")
         EndiF
 
         Out("wait recharge")
         WaitRecharge()
 
-        Out("next " & $iBlocked)
         $iBlocked += 1
     Until ReachedDestination($x, $y) Or $iBlocked > 5
-    Out("Reached destination " & $iBlocked)
     If $iBlocked > 5 Then Return False
     RndSleep(250)
     Return True
@@ -309,7 +331,6 @@ Func Fight()
     RndSleep(150)
 
     Do
-        Out("Fighting " & $iBlocked)
         If GetIsDead() Then Return False
         KeepUpBoon()
         CallTarget($target)
@@ -374,23 +395,18 @@ Func Loot()
     Local $lBlockedCount = 0
 
     For $i = 1 To GetMaxAgents()
-        Out("Looting " & $lBlockedCount)
         If GetIsDead() Then Return
         If InventoryIsFull() Then ContinueLoop
         $me = GetAgentByID(-2)
         $agent = GetAgentByID($i)
-        Out("Looting Ex")
         If Not GetIsMovable($agent) Or Not GetCanPickUp($agent) Then
-            Out("Looting Hugh")
             ContinueLoop
         EndIf
-        Out("Looting Grec")
         $item = GetItemByAgentID($i)
 
         If CanPickUp($item) Then
             $itemExists = True
             Do
-                Out("Looting Grec " & $lBlockedCount)
                 PickUpItem($item)
                 RndSleep(100)
                 Do
