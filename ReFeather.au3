@@ -4,7 +4,7 @@
 #include <WindowsConstants.au3>
 #include <ComboConstants.au3>
 #include "../GWA2.au3"
-#include "../SimpleInventory.au3"
+#include "../_SimpleInventory.au3"
 #NoTrayIcon
 
 #Region Constants
