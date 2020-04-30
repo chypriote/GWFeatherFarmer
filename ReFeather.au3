@@ -3,8 +3,10 @@
 #include <StaticConstants.au3>
 #include <WindowsConstants.au3>
 #include <ComboConstants.au3>
-#include "../GWA2.au3"
+#include "../GWA2/GWA2.au3"
 #include "../_SimpleInventory.au3"
+GUISetIcon(@ScriptDir & "\feather.ico")
+TraySetIcon(@ScriptDir & "\feather.ico")
 #NoTrayIcon
 
 #Region Constants
