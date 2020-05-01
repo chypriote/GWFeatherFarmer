@@ -213,6 +213,8 @@ Func Init()
 		EndIf
 		GUICtrlSetState($StartButton, $GUI_ENABLE)
 		GUICtrlSetData($StartButton, "Pause")
+		Local $charname = GetCharname()
+		WinSetTitle($Gui, "", "" & $charname & " - Feathers Farm")
 		$me = GetAgentByID(-2)
 		$MAX_HP = DllStructGetData($me, 'MaxHP')
 	Else
