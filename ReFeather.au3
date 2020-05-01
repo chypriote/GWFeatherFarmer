@@ -107,10 +107,7 @@ Func MainLoop()
 	Farm()
 
 	Out("Returning to Harbor")
-	Resign()
-	RndSleep(4000)
-	ReturnToOutpost()
-	WaitMapLoading($SEITUNG_HARBOR)
+	HardLeave()
 	If InventoryIsFull() Then
 		Inventory()
 		GoPortal()
@@ -228,7 +225,7 @@ Func HardLeave()
 	Resign()
 	RndSleep(4000)
 	ReturnToOutpost()
-	WaitMapLoading()
+	WaitMapLoading($SEITUNG_HARBOR)
 EndFunc ;HardLeave
 
 Func Farm()
@@ -287,7 +284,7 @@ Func Farm()
 			If GetIsDead() Then
 				$Deaths += 1
 				GUICtrlSetData($LabelDeaths, $Deaths)
-				HardLeave()
+				Return False
 			EndIf
 		EndIf
 	Next
@@ -312,7 +309,7 @@ Func AttackMove($x, $y)
 			Loot()
 		EndiF
 
-		WaitRecharge()
+		If Not GetIsDead() Then WaitRecharge()
 
 		$iBlocked += 1
 	Until ReachedDestination($x, $y) Or $iBlocked > 5
@@ -323,7 +320,6 @@ EndFunc ;AttackMove
 
 #Region Fight
 Func Fight()
-
 	Local $iBlocked = 0
 	$target = GetNearestEnemyToAgent()
 	ChangeTarget($target)
@@ -357,10 +353,11 @@ EndFunc ;Fight
 Func UseSkills()
 	For $i = 0 To 7
 		If Not TargetIsAlive() Then ExitLoop
+		Local $skill = GetSkillByID(GetSkillbarSkillID($i, 0))
 		$recharge = DllStructGetData(GetSkillBar(), "Recharge" & $i + 1)
 
 		If Not TargetIsSpiritRange() And $i < 6 Then ContinueLoop
-		If $recharge == 0 And GetEnergy() >= $SkillEnergy[$i] Then
+		If $recharge == 0 And GetEnergy() >= GetEnergyCostEx($skill) Then
 			$useSkill = $i + 1
 			UseSkill($useSkill, GetCurrentTarget())
 			RndSleep($SkillCastTime[$i] + 500)
@@ -371,9 +368,13 @@ EndFunc ;UseSkill
 Func WaitRecharge()
 	Out("wait recharge")
 	Local $j = 0
-	For $i = 1 To 5
-		If GetSkillbarSkillRecharge($i) Then $j += 1
-	Next
+	Do 
+		For $i = 1 To 5
+			If GetSkillbarSkillRecharge($i) Then $j += 1
+		Next
+		RndSleep(1000)
+	Until $j < 3
+
 	Return $j > 2
 EndFunc ;WaitRecharge
 #EndRegion Fight
@@ -450,9 +451,17 @@ Func CanPickUp($item)
 		Return True
 	EndIf
 	If $ModelID == $ITEM_LOCKPICK Then Return True
-	If $ModelID == $DPREMOVAL_CLOVER Then Return True
+	If $ModelID == $DPREMOVAL_FOUR_LEAF_CLOVER Then Return True
 	If $ModelID == $GOLD_COINS And GetGoldCharacter() < 99000 Then Return True
 
+	If InArray($ModelID, $ALL_TOMES_ARRAY)			Then Return True
+	If InArray($ModelID, $ALL_TROPHIES_ARRAY)		Then Return True
+	If InArray($ModelID, $ALL_TITLE_ITEMS)			Then Return True
+	If InArray($ModelID, $ALL_MATERIALS_ARRAY)		Then Return True
+	If InArray($ModelID, $SPECIAL_DROPS_ARRAY)		Then Return True
+	If InArray($ModelID, $ALL_DPREMOVAL_ARRAY)		Then Return True
+
+	Return False
 	Return True ;Added to gather everythings
 EndFunc ;CanPickUp
 #EndRegion Loot
