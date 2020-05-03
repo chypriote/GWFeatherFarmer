@@ -40,7 +40,7 @@ Global $gwpid = -1
 $USE_EXPERT_ID_KIT = False
 
 #Region Gui
-GUICreate("Feather Farm", 210, 290, 100, 100)
+$GUI = GUICreate("Feather Farm", 210, 290, 100, 100)
 
 GUICtrlCreateGroup("Character name:", 5, 5, 200, 45)
 $CharacterName = GUICtrlCreateCombo("", 10, 20, 120, 20, BitOR($CBS_DROPDOWN, $CBS_AUTOHSCROLL))
@@ -120,7 +120,7 @@ Func Setup()
 	If GetMapID() <> $SEITUNG_HARBOR Then TravelTo($SEITUNG_HARBOR)
 
 	Out("Loading skillbar.")
-	LoadSkillTemplate($SkillBarTemplate)
+	;LoadSkillTemplate($SkillBarTemplate)
 	SwitchMode(False)
 
 	If CountSlots() < 10 Then Inventory()
@@ -214,7 +214,7 @@ Func Init()
 		GUICtrlSetState($StartButton, $GUI_ENABLE)
 		GUICtrlSetData($StartButton, "Pause")
 		Local $charname = GetCharname()
-		WinSetTitle($Gui, "", "" & $charname & " - Feathers Farm")
+		WinSetTitle($GUI, "", "" & $charname & " - Feathers Farm")
 		$me = GetAgentByID(-2)
 		$MAX_HP = DllStructGetData($me, 'MaxHP')
 	Else
@@ -279,7 +279,7 @@ Func Farm()
 		[-10465, 5466] _
 	]
 
-	For $i = 0 To UBound($route)
+	For $i = 0 To UBound($route) - 1
 		KeepUpBoon()
 		If InventoryIsFull() Then ContinueLoop
 		If Not AttackMove($route[$i][0], $route[$i][1]) Then
@@ -338,7 +338,7 @@ Func Fight()
 			If GetIsDead() Then Return False
 			Attack($target)
 			KeepUpBoon()
-			UseSkills()
+			UseSpirits()
 			RndSleep(150)
 		Until Not TargetIsAlive() Or TimerDiff($lDeadlock) > 10000
 
@@ -352,39 +352,39 @@ Func Fight()
 	Return True
 EndFunc ;Fight
 
-Func UseSkills()
-	For $i = 0 To 7
-		If Not TargetIsAlive() Then ExitLoop
+Func UseSpirits()
+	For $i = 1 To 6
+		If Not TargetIsAlive() Or GetIsDead() Then ExitLoop
 		Local $skill = GetSkillByID(GetSkillbarSkillID($i, 0))
-		$recharge = DllStructGetData(GetSkillBar(), "Recharge" & $i + 1)
 
+		If Not IsRecharged($i) Or GetEnergy() < GetEnergyCostEx($skill) Then ContinueLoop
 		If Not TargetIsSpiritRange() And $i < 6 Then ContinueLoop
-		If $recharge == 0 And GetEnergy() >= GetEnergyCostEx($skill) Then
-			$useSkill = $i + 1
-			UseSkill($useSkill, GetCurrentTarget())
-			RndSleep($SkillCastTime[$i] + 500)
-		EndIf
+
+		Local $deadlock = TimerInit()
+
+		UseSkill($i, GetCurrentTarget())
+
+		Do
+			RndSleep(200)
+		Until (Not IsRecharged($i)) Or (TimerDiff($deadlock) > 3000) Or GetIsDead()
 	Next
 EndFunc ;UseSkill
 
 Func WaitRecharge()
 	Out("wait recharge")
-	Local $j = 0
 	Do 
+		$j = 0
 		For $i = 1 To 5
-			If GetSkillbarSkillRecharge($i) Then $j += 1
+			If Not IsRecharged($i) Then $j += 1
 		Next
 		RndSleep(1000)
 	Until $j < 3
-
-	Return $j > 2
 EndFunc ;WaitRecharge
 #EndRegion Fight
 
 Func KeepUpBoon()
-	If GetSkillBarSkillRecharge(8) == 0 And DllStructGetData(GetEffect(1230), 'SkillID') <> 1230 and GetEnergy(-2)>=10 Then UseSkill(8, -2)
-	RndSleep(250)
-	If GetSkillBarSkillRecharge(7) == 0 And DllStructGetData(GetEffect(1229), 'SkillID') <> 1229 and GetEnergy(-2)>=5 Then UseSkill(7, -2)
+	IF DllStructGetData(GetEffect(1230), 'SkillID') <> 1230 Then UseSkillEx(8, -1)
+	IF DllStructGetData(GetEffect(1229), 'SkillID') <> 1229 Then UseSkillEx(7, -1)
 EndFunc ;KeepUpBoon
 
 Func GoMerchant()
@@ -506,7 +506,7 @@ Func TargetIsInRange()
 	Return GetDistance(GetCurrentTarget()) < 1000
 EndFunc ;TargetIsInRange
 Func TargetIsSpiritRange()
-	Return GetDistance(GetCurrentTarget()) < 1000
+	Return GetDistance(GetCurrentTarget()) < 312
 EndFunc ;TargetIsSpiritRange
 #EndRegion FightHelpers
 
