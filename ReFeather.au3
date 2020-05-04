@@ -3,6 +3,8 @@
 #include <StaticConstants.au3>
 #include <WindowsConstants.au3>
 #include <ComboConstants.au3>
+#include <ScrollBarsConstants.au3>
+#include <GuiEdit.au3>
 #include "../GWA2/GWA2.au3"
 #include "../_SimpleInventory.au3"
 GUISetIcon(@ScriptDir & "\feather.ico")
@@ -40,6 +42,7 @@ Global $gwpid = -1
 $USE_EXPERT_ID_KIT = False
 
 #Region Gui
+;$GUI = GUICreate("Feather Farm", 210, 420, 100, 100)
 $GUI = GUICreate("Feather Farm", 210, 290, 100, 100)
 
 GUICtrlCreateGroup("Character name:", 5, 5, 200, 45)
@@ -65,6 +68,10 @@ GUICtrlCreateLabel("Bones:", 10, 170, 105, 15)
 GUICtrlCreateGroup("Status:", 5, 200, 200, 40)
 	$LabelStatus = GUICtrlCreateLabel("Ready to begin", 10, 215, 180, 20, $SS_CENTER)
 
+;$StatusLabel = GUICtrlCreateEdit("", 5, 200, 200, 150, 2097220)
+;$StartButton = GUICtrlCreateButton("Start", 15, 380, 170, 25)
+
+;$StartButton = GUICtrlCreateButton("Start", 15, 380, 170, 25)
 $StartButton = GUICtrlCreateButton("Start", 15, 250, 170, 25)
 
 Opt("GUIOnEventMode", 1)
@@ -469,8 +476,11 @@ EndFunc ;CanPickUp
 #EndRegion Loot
 
 #Region Helpers
-Func Out($text)
-	GUICtrlSetData($LabelStatus, $text)
+Func Out($msg)
+	; GUICtrlSetData($StatusLabel, GUICtrlRead($StatusLabel) & "[" & @HOUR & ":" & @MIN & "]" & " " & $msg & @CRLF)
+	; _GUICtrlEdit_Scroll($StatusLabel, $SB_SCROLLCARET)
+	; _GUICtrlEdit_Scroll($StatusLabel, $SB_LINEUP)
+	GUICtrlSetData($LabelStatus, $msg)
 EndFunc ;Out
 
 Func VerifyConnection()
@@ -506,7 +516,7 @@ Func TargetIsInRange()
 	Return GetDistance(GetCurrentTarget()) < 1000
 EndFunc ;TargetIsInRange
 Func TargetIsSpiritRange()
-	Return GetDistance(GetCurrentTarget()) < 312
+	Return GetDistance(GetCurrentTarget()) < 1000
 EndFunc ;TargetIsSpiritRange
 #EndRegion FightHelpers
 
